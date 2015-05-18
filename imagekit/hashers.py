@@ -7,6 +7,7 @@ except ImportError:
     # Python 2 compatible
     from pickle import Pickler as _Pickler
 from .lib import StringIO
+import re
 
 
 class CanonicalizingPickler(_Pickler):
@@ -32,4 +33,8 @@ class CanonicalizingPickler(_Pickler):
 def pickle(obj):
     file = StringIO()
     CanonicalizingPickler(file, 0).dump(obj)
-    return md5(file.getvalue()).hexdigest()
+    pickle_as_text=file.getvalue().decode('UTF-8')
+    pat=re.compile(r'^(s?)V(\w*)$', flags=re.MULTILINE)
+    pickle_as_text=pat.sub(r"\1S'\2'", pickle_as_text)
+    pickle_as_text=pickle_as_text.replace('cbuiltins','c__builtin__').replace('ccopyreg','ccopy_reg').replace('L100L','I100')
+    return md5(pickle_as_text.encode()).hexdigest()
